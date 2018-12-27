@@ -1,155 +1,168 @@
-(function(doc) {
+(function (doc) {
 
-    var FS = require('fs'),
-        GUI = require('nw.gui'),
-        SVGO = require('svgo'),
-        svgo = new SVGO(),
-        body = doc.body,
-        holder = doc.querySelector('.holder'),
-        list = doc.querySelector('.list'),
-        regSVGFile = /\.svg$/;
+  let fs = require('fs');
+  let SVGO = require('svgo');
+  let svgo = new SVGO({
+    plugins: [
+      { cleanupAttrs: true                    },
+      { removeDoctype: true                   },
+      { removeXMLProcInst: true               },
+      { removeComments: true                  },
+      { removeMetadata: true                  },
+      { removeTitle: true                     },
+      { removeDesc: true                      },
+      { removeUselessDefs: true               },
+      { removeEditorsNSData: true             },
+      { removeEmptyAttrs: true                },
+      { removeHiddenElems: true               },
+      { removeEmptyText: true                 },
+      { removeEmptyContainers: true           },
+      { removeViewBox: false                  },
+      { cleanUpEnableBackground: true         },
+      { convertStyleToAttrs: true             },
+      { convertColors: true                   },
+      { convertPathData: true                 },
+      { convertTransform: true                },
+      { removeUnknownsAndDefaults: true       },
+      { removeNonInheritableGroupAttrs: true  },
+      { removeUselessStrokeAndFill: true      },
+      { removeUnusedNS: true                  },
+      { cleanupIDs: true                      },
+      { cleanupNumericValues: true            },
+      { moveElemsAttrsToGroup: true           },
+      { moveGroupAttrsToElems: true           },
+      { collapseGroups: true                  },
+      { removeRasterImages: false             },
+      { mergePaths: true                      },
+      { convertShapeToPath: true              },
+      { sortAttrs: true                       },
+      { transformsWithOnePath: false          },
+      { removeDimensions: true                },
+      { removeAttrs: {attrs: '(stroke|fill)'} }
+    ]
+  });
+  let body = doc.body;
+  let holder = doc.querySelector('.holder');
+  let list = doc.querySelector('.list');
+  let regSVGFile = /\.svg$/;
 
-    // send files to the not already running app
-    // ("Open With" or drag-n-drop)
-    if (GUI.App.argv.length) {
-
-        var files = GUI.App.argv.map(function(path) {
-            return {
-                name: path.substring(path.lastIndexOf('/') + 1),
-                path: path
-            };
-        });
-
-        onFilesDrop(files);
-
-    }
-
-    // send files to the already running app
-    // ("Open With" or drag-n-drop)
-    GUI.App.on('open', function(path) {
-
-        onFilesDrop([{
-            name: path.substring(path.lastIndexOf('/') + 1),
-            path: path
-        }]);
-
+  // send files to the not already running app
+  // ("Open With" or drag-n-drop)
+  if (nw.App.argv.length) {
+    let files = nw.App.argv.map(function (path) {
+      return {
+        name: path.substring(path.lastIndexOf('/') + 1),
+        path: path
+      };
     });
 
-    body.ondragover = function() {
+    onFilesDrop(files);
+  }
 
-        return false;
+  // send files to the already running app
+  // ("Open With" or drag-n-drop)
+  nw.App.on('open', function (path) {
+    onFilesDrop([{
+      name: path.substring(path.lastIndexOf('/') + 1),
+      path: path
+    }]);
+  });
 
-    };
+  body.ondragover = function () {
+    return false;
+  };
 
-    body.ondragenter = function() {
+  body.ondragenter = function () {
+    holder.classList.add('holder_state_hover');
+    return false;
+  };
 
-        holder.classList.add('holder_state_hover');
-        return false;
+  // drag-n-drop files to the app window's special holder
+  body.ondrop = function (evt) {
+    let files = [].slice.call(evt.dataTransfer.files);
 
-    };
+    onFilesDrop(files);
 
-    // drag-n-drop files to the app window's special holder
-    body.ondrop = function(e) {
+    evt.preventDefault();
+  };
 
-        var files = [].slice.call(e.dataTransfer.files);
+  function onFilesDrop (files) {
+    let docFragment = doc.createDocumentFragment();
 
-        onFilesDrop(files);
+    files.forEach(function (file) {
+debugger;
+      if (regSVGFile.test(file.name)) {
 
-        e.preventDefault();
+        let tr = doc.createElement('tr');
+        let name = doc.createElement('td');
+        let before = doc.createElement('td');
+        let after = doc.createElement('td');
+        let profit = doc.createElement('td');
 
-    };
+        tr.className = 'item';
+        name.className = 'item__cell item__cell_type_name';
+        name.appendChild(doc.createTextNode(file.name));
+        before.className = 'item__cell item__cell_type_before';
+        after.className = 'item__cell item__cell_type_after';
+        profit.className = 'item__cell item__cell_type_profit';
 
-    function onFilesDrop(files) {
+        tr.appendChild(name);
+        tr.appendChild(before);
+        tr.appendChild(after);
+        tr.appendChild(profit);
 
-        var docFragment = doc.createDocumentFragment();
+        docFragment.appendChild(tr);
 
-        files.forEach(function(file) {
+        (function (filepath, before, after, profit) {
+          fs.readFile(filepath, 'utf8', function (err, data) {
+            let inBytes = Buffer.byteLength(data, 'utf8');
+            let outBytes;
 
-            if (regSVGFile.test(file.name)) {
+            try {
+              svgo
+                .optimize(data, { path: filepath })
+                .then(function (result) {
+                  fs.writeFile(path, result.data, 'utf8', function (err) {
+                    if (err) {
+                      console.log(err);
+                    }
+                    outBytes = Buffer.byteLength(result.data, 'utf8');
 
-                var tr = doc.createElement('tr'),
-                    name = doc.createElement('td'),
-                    before = doc.createElement('td'),
-                    after = doc.createElement('td'),
-                    profit = doc.createElement('td');
+                    before.appendChild(
+                      doc.createTextNode(
+                        Math.round((inBytes / 1024) * 1000) / 1000 + ' KiB'
+                      )
+                    );
+                    after.appendChild(
+                      doc.createTextNode(
+                        Math.round((outBytes / 1024) * 1000) / 1000 + ' KiB'
+                      )
+                    );
+                    profit.appendChild(
+                      doc.createTextNode(
+                        Math.round((100 - outBytes * 100 / inBytes) * 10) /  10 + '%'
+                      )
+                    );
 
-                tr.className = 'item';
-                name.className = 'item__cell item__cell_type_name';
-                name.appendChild(doc.createTextNode(file.name));
-                before.className = 'item__cell item__cell_type_before';
-                after.className = 'item__cell item__cell_type_after';
-                profit.className = 'item__cell item__cell_type_profit';
-
-                tr.appendChild(name);
-                tr.appendChild(before);
-                tr.appendChild(after);
-                tr.appendChild(profit);
-
-                docFragment.appendChild(tr);
-
-                (function(path, before, after, profit) {
-
-                    FS.readFile(path, 'utf8', function(err, data) {
-
-                        var inBytes = Buffer.byteLength(data, 'utf8'),
-                            outBytes;
-
-                        try {
-
-                            svgo.optimize(data, function(result) {
-
-                                FS.writeFile(path, result.data, 'utf8', function() {
-
-                                    outBytes = Buffer.byteLength(result.data, 'utf8');
-
-                                    before.appendChild(
-                                        doc.createTextNode(
-                                            Math.round((inBytes / 1024) * 1000) / 1000 + ' KiB'
-                                        )
-                                    );
-                                    after.appendChild(
-                                        doc.createTextNode(
-                                            Math.round((outBytes / 1024) * 1000) / 1000 + ' KiB'
-                                        )
-                                    );
-                                    profit.appendChild(
-                                        doc.createTextNode(
-                                            Math.round((100 - outBytes * 100 / inBytes) * 10) /  10 + '%'
-                                        )
-                                    );
-
-                                });
-
-                            });
-
-                        } catch(e) {
-
-                            tr.classList.add('item_error_yes');
-                            tr.setAttribute('title', e.message);
-                            profit.appendChild(doc.createTextNode('error'));
-
-                        }
-
-                    });
-
-                })(file.path, before, after, profit);
-
+                  });
+              });
+            } catch (err) {
+              console.log(err);
+              tr.classList.add('item_error_yes');
+              tr.setAttribute('title', err.message);
+              profit.appendChild(doc.createTextNode('error'));
             }
+          });
+        })(file.path, before, after, profit);
+      }
+    });
 
-        });
-
-        if (docFragment.childNodes.length) {
-
-            body.classList.add('page_layout_list');
-            body.classList.remove('page_layout_holder');
-            list.appendChild(docFragment);
-
-        } else {
-
-            holder.classList.remove('holder_state_hover');
-
-        }
-
+    if (docFragment.childNodes.length) {
+      body.classList.add('page_layout_list');
+      body.classList.remove('page_layout_holder');
+      list.appendChild(docFragment);
+    } else {
+      holder.classList.remove('holder_state_hover');
     }
-
+  }
 })(document);

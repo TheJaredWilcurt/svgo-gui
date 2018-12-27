@@ -1,24 +1,40 @@
 {
   "name": "svgo-gui",
   "version": "0.0.9",
-  "description": "Node-WebKit based GUI for SVGO - tool for optimizing SVG vector graphics files",
-  "keywords": [ "svgo", "svg", "optimize", "minify" ],
-  "maintainers":[{
-    "name": "Kir Belevich",
-    "email": "kir@soulshine.in",
-    "web": "https://github.com/svg"
-  }],
-  "repositories": [{
+  "description": "NW.js based GUI for SVGO - tool for optimizing SVG vector graphics files",
+  "keywords": [
+    "svgo",
+    "svg",
+    "optimize",
+    "minify"
+  ],
+  "scripts": {
+    "start": "nw ."
+  },
+  "maintainers": [
+    {
+      "name": "Kir Belevich",
+      "email": "kir@soulshine.in",
+      "web": "https://github.com/svg"
+    }
+  ],
+  "repository": {
     "type": "git",
     "url": "git://github.com/svg/svgo-gui.git"
-  }],
+  },
   "bugs": "https://github.com/svg/svgo-gui/issues",
-  "licenses": [{
-    "type": "MIT",
-    "url": "https://raw.github.com/svg/svgo-gui/master/LICENSE"
-  }],
+  "license": "MIT",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://raw.github.com/svg/svgo-gui/master/LICENSE"
+    }
+  ],
   "dependencies": {
-    "svgo": ""
+    "svgo": "latest"
+  },
+  "devDependencies": {
+    "nw": "sdk"
   },
   "main": "index.html",
   "window": {

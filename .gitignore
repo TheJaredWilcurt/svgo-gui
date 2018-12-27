@@ -1,5 +1,6 @@
 app.nw/app.nw
 app.nw/node_modules
+app.nw/package-lock.json
 win/
 linux/
 npm-debug.log
@@ -12,3 +13,5 @@ npm-debug.log
 *.app
 .DS_Store
 win
+
+package-lock.json
